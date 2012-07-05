@@ -7,7 +7,7 @@ class DATABASE_CONFIG {
         switch ($db) {
         case 'pgsql':
             $this->default = $this->test = array(
-                                                 'driver' => 'Database/Postgres',
+                                                 'datasource' => 'Database/Postgres',
                                                  'persistent' => false,
                                                  'host' => '127.0.0.1',
                                                  'login' => 'postgres',
