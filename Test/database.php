@@ -26,7 +26,7 @@ class DATABASE_CONFIG {
                                                  'login' => 'root',
                                                  'password' => '',
                                                  'database' => 'cakephp_test',
-                                                 'prefix' => ''
+                                                 'prefix' => '',
                                                  'encoding' => 'utf8'
                                                  );
 
