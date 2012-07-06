@@ -69,6 +69,16 @@ class SoftDeletableTestCase extends CakeTestCase{
     }
 
     /**
+     * testDependentFind
+     *
+     */
+    public function testDependentFind(){
+        $this->YasdPost->YasdComment->delete(1);
+        $result = $this->YasdPost->findById(1);
+        $this->assertIdentical(count($result['YasdComment']), 1);
+    }
+
+    /**
      * testSoftDeletableFind
      *
      */
@@ -107,6 +117,7 @@ class SoftDeletableTestCase extends CakeTestCase{
     /**
      * testHardDelete
      *
+     * jpn: SoftDeletableを無効にして削除ができる
      */
     public function testHardDelete(){
         $this->YasdPost->disableSoftDeletable();

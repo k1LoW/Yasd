@@ -73,10 +73,30 @@ class SoftDeletableBehavior extends ModelBehavior {
             }
 
             if (is_string($queryData['conditions'])) {
-                $queryData['conditions'] = '(' . $Db->name($model->alias) . '.' . $Db->name($this->settings[$model->alias]['field']) . ' IS NULL  OR ' . $Db->name($model->alias) . '.' . $Db->name($this->settings[$model->alias]['field']) . '!= 1) AND ' . $queryData['conditions'];
+                $queryData['conditions'] = '(' . $Db->name($model->alias) . '.' . $Db->name($this->settings[$model->alias]['field']) . ' IS NULL OR ' . $Db->name($model->alias) . '.' . $Db->name($this->settings[$model->alias]['field']) . '!= 1) AND ' . $queryData['conditions'];
             } else {
                 $queryData['conditions'][] = array('OR' => array(array($model->alias . '.' . $this->settings[$model->alias]['field'] => '0'),
                                                                  array($model->alias . '.' . $this->settings[$model->alias]['field'] => null)));
+            }
+        }
+
+        foreach(array('hasOne', 'hasMany') as $binding) {
+            if (empty($model->$binding)) {
+                continue;
+            }
+            foreach ($model->{$binding} as $assoc => $value) {
+                if (empty($this->settings[$assoc]['enable'])) {
+                    continue;
+                }
+                if (empty($model->{$binding}[$assoc]['conditions'])) {
+                    $model->{$binding}[$assoc]['conditions'] = array('OR' => array(array($assoc . '.' . $this->settings[$assoc]['field'] => '0'),
+                                                                                   array($assoc . '.' . $this->settings[$assoc]['field'] => null)));
+                } else if(is_string($model->{$binding}[$assoc]['conditions'])) {
+                    $model->{$binding}[$assoc]['conditions'] = '(' . $Db->name($assoc) . '.' . $Db->name($this->settings[$assoc]['field']) . ' IS NULL OR ' . $Db->name($assoc) . '.' . $Db->name($this->settings[$assoc]['field']) . '!= 1) AND ' . $model->{$binding}[$assoc]['conditions'];
+                } else {
+                    $model->{$binding}[$assoc]['conditions'][] = array('OR' => array(array($assoc . '.' . $this->settings[$assoc]['field'] => '0'),
+                                                                                   array($assoc . '.' . $this->settings[$assoc]['field'] => null)));
+                }
             }
         }
 
