@@ -37,6 +37,8 @@ class SoftDeletableTestCase extends CakeTestCase{
     function setUp() {
         $this->YasdPost = new YasdPost();
         $this->YasdPostFixture = ClassRegistry::init('YasdPostFixture');
+        $this->YasdPost->enableSoftDeletable();
+        $this->YasdPost->YasdComment->enableSoftDeletable();
     }
 
     function tearDown() {
@@ -56,6 +58,15 @@ class SoftDeletableTestCase extends CakeTestCase{
     }
 
     /**
+     * testFindCount
+     *
+     */
+    public function testFindCount(){
+        $result = $this->YasdPost->find('count');
+        $this->assertIdentical($result, 2);
+    }
+
+    /**
      * testFindWithCondition
      *
      */
@@ -71,8 +82,12 @@ class SoftDeletableTestCase extends CakeTestCase{
     /**
      * testDependentFind
      *
+     * jpn: hasManyで紐づいているModelについてもSoftDeletable属性をチェックする
      */
     public function testDependentFind(){
+        $result = $this->YasdPost->findById(1);
+        $this->assertIdentical(count($result['YasdComment']), 2);
+
         $this->YasdPost->YasdComment->delete(1);
         $result = $this->YasdPost->findById(1);
         $this->assertIdentical(count($result['YasdComment']), 1);
