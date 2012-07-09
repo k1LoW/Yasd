@@ -168,6 +168,7 @@ class SoftDeletableTestCase extends CakeTestCase{
     /**
      * testSoftDeletableFind
      *
+     * jpn: SoftDeletableが有効になっている
      */
     public function testSoftDeletableFind(){
         // jpn: SoftDeletableが有効の時にはModel::delete()がfalseになる
@@ -177,9 +178,25 @@ class SoftDeletableTestCase extends CakeTestCase{
         $result = $this->YasdPost->find('all');
         $this->assertIdentical(count($result), 1);
 
+        // jpn: disableSoftDeletable()で無効化できる
         $this->YasdPost->disableSoftDeletable();
         $result = $this->YasdPost->find('all');
         $this->assertIdentical(count($result), 2);
+    }
+
+    /**
+     * testSoftDeletableFindWithCondition
+     *
+     * jpn: delete_flgの条件を強引に上書きできる
+     *
+     */
+    public function testSoftDeletableFindWithCondition(){
+        $result = $this->YasdPost->delete(1);
+        $result = $this->YasdPost->find('all');
+        $this->assertIdentical(count($result), 1);
+
+        $result = $this->YasdPost->find('all', array('conditions' => array('YasdPost.delete_flg' => array(0,1,null))));
+        $this->assertIdentical(count($result), 1);
     }
 
     /**

@@ -40,11 +40,11 @@ class SoftDeletableBehavior extends ModelBehavior {
             || !$this->settings[$model->alias]['hasField']) {
             return $queryData;
         }
-
         $Db = ConnectionManager::getDataSource($model->useDbConfig);
         $include = false;
 
         if (!empty($queryData['conditions']) && is_string($queryData['conditions'])) {
+            // string condition
             $include = true;
 
             $fields = array(
@@ -60,10 +60,12 @@ class SoftDeletableBehavior extends ModelBehavior {
                     break;
                 }
             }
-        } else if (empty($queryData['conditions']) || (
-                                                       !in_array($this->settings[$model->alias]['field'], array_keys($queryData['conditions']), true) &&
-                                                       !in_array($model->alias . '.' . $this->settings[$model->alias]['field'], array_keys($queryData['conditions']), true)
-                                                       )) {
+        } else if (empty($queryData['conditions'])) {
+            $include = true;
+        }  else if (
+                    !in_array($this->settings[$model->alias]['field'], array_keys($queryData['conditions']), true)
+                    && !in_array($model->alias . '.' . $this->settings[$model->alias]['field'], array_keys($queryData['conditions']), true)
+                    ) {
             $include = true;
         }
 
@@ -99,7 +101,6 @@ class SoftDeletableBehavior extends ModelBehavior {
                 }
             }
         }
-
         return $queryData;
     }
 
