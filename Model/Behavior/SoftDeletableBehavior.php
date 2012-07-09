@@ -80,7 +80,7 @@ class SoftDeletableBehavior extends ModelBehavior {
             }
         }
 
-        foreach(array('hasOne', 'hasMany') as $binding) {
+        foreach(array('hasOne', 'hasMany', 'hasAndBelongsToMany') as $binding) {
             if (empty($model->$binding)) {
                 continue;
             }
@@ -205,7 +205,6 @@ class SoftDeletableBehavior extends ModelBehavior {
                         $records = $dependentModel->find('all', array(
                                                                       'conditions' => $conditions, 'fields' => $dependentModel->primaryKey
                                                                       ));
-
                         if (!empty($records)) {
                             foreach ($records as $record) {
                                 $dependentModel->delete($record[$dependentModel->alias][$dependentModel->primaryKey]);

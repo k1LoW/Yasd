@@ -22,6 +22,10 @@ class YasdPost extends CakeTestModel{
             'dependent' => true,
         )
     );
+
+    public $hasAndBelongsToMany = array(
+                                        'YasdTag'
+    );
 }
 
 class YasdMemo extends CakeTestModel{
@@ -50,11 +54,24 @@ class YasdComment extends CakeTestModel{
     );
 }
 
+class YasdTag extends CakeTestModel{
+    public $name = 'YasdTag';
+    public $actsAs = array('Yasd.SoftDeletable');
+
+}
+
+class YasdPostsYasdTag extends CakeTestModel{
+    public $name = 'YasdPostsYasdTag';
+    public $actsAs = array('Yasd.SoftDeletable');
+}
+
 class SoftDeletableTestCase extends CakeTestCase{
 
     public $fixtures = array('plugin.Yasd.yasd_post',
                              'plugin.Yasd.yasd_memo',
-                             'plugin.Yasd.yasd_comment');
+                             'plugin.Yasd.yasd_comment',
+                             'plugin.Yasd.yasd_posts_yasd_tag',
+                             'plugin.Yasd.yasd_tag');
 
     function setUp() {
         $this->YasdPost = new YasdPost();
@@ -62,6 +79,9 @@ class SoftDeletableTestCase extends CakeTestCase{
         $this->YasdPost->enableSoftDeletable();
         $this->YasdPost->YasdMemo->enableSoftDeletable();
         $this->YasdPost->YasdComment->enableSoftDeletable();
+        $this->YasdPost->YasdTag->enableSoftDeletable();
+
+        $this->YasdPostsYasdTag = new YasdPostsYasdTag();
     }
 
     function tearDown() {
@@ -132,6 +152,20 @@ class SoftDeletableTestCase extends CakeTestCase{
     }
 
     /**
+     * testDependentHABTMFind
+     *
+     * jpn: hasAndBelongsToManyで紐づいているModelについてもSoftDeletable属性をチェックする
+     */
+    public function testDependentHABTMFind(){
+        $result = $this->YasdPost->findById(1);
+        $this->assertIdentical(count($result['YasdTag']), 2);
+
+        $this->YasdPost->YasdTag->delete(1);
+        $result = $this->YasdPost->findById(1);
+        $this->assertIdentical(count($result['YasdTag']), 1);
+    }
+
+    /**
      * testSoftDeletableFind
      *
      */
@@ -183,6 +217,30 @@ class SoftDeletableTestCase extends CakeTestCase{
 
         $this->YasdPost->YasdComment->disableSoftDeletable();
         $result = $this->YasdPost->YasdComment->find('all');
+        $this->assertIdentical(count($result), 2);
+    }
+
+    /**
+     * testDependentHABTMSoftDelete
+     *
+     * jpn: HABTMのModelのSoftDeletableが有効に発動する
+     */
+    public function testDependentHABTMSoftDelete(){
+        $result = $this->YasdPost->YasdTag->find('all');
+        $this->assertIdentical(count($result), 2);
+
+        $this->YasdPost->delete(1);
+
+        // jpn: HABTMはリンクを削除するだけ
+        $result = $this->YasdPost->YasdTag->find('all');
+        $this->assertIdentical(count($result), 2);
+
+        // jpn: 中間テーブルもSoftDeletableの設定を書けば有効に発動する
+        $result = $this->YasdPostsYasdTag->find('all');
+        $this->assertIdentical(count($result), 0);
+
+        $this->YasdPostsYasdTag->disableSoftDeletable();
+        $result = $this->YasdPostsYasdTag->find('all');
         $this->assertIdentical(count($result), 2);
     }
 
