@@ -7,11 +7,32 @@ class YasdPost extends CakeTestModel{
     public $name = 'YasdPost';
     public $actsAs = array('Yasd.SoftDeletable');
 
+    public $hasOne = array(
+        'YasdMemo' => array(
+            'className' => 'YasdMemo',
+            'foreignKey' => 'yasd_post_id',
+            'dependent' => true,
+        )
+    );
+
     public $hasMany = array(
         'YasdComment' => array(
             'className' => 'YasdComment',
             'foreignKey' => 'yasd_post_id',
             'dependent' => true,
+        )
+    );
+}
+
+class YasdMemo extends CakeTestModel{
+
+    public $name = 'YasdMemo';
+    public $actsAs = array('Yasd.SoftDeletable');
+
+    public $belongsTo = array(
+        'YasdPost' => array(
+            'className' => 'YasdPost',
+            'foreignKey' => 'yasd_post_id',
         )
     );
 }
@@ -32,12 +53,14 @@ class YasdComment extends CakeTestModel{
 class SoftDeletableTestCase extends CakeTestCase{
 
     public $fixtures = array('plugin.Yasd.yasd_post',
+                             'plugin.Yasd.yasd_memo',
                              'plugin.Yasd.yasd_comment');
 
     function setUp() {
         $this->YasdPost = new YasdPost();
         $this->YasdPostFixture = ClassRegistry::init('YasdPostFixture');
         $this->YasdPost->enableSoftDeletable();
+        $this->YasdPost->YasdMemo->enableSoftDeletable();
         $this->YasdPost->YasdComment->enableSoftDeletable();
     }
 
@@ -60,6 +83,7 @@ class SoftDeletableTestCase extends CakeTestCase{
     /**
      * testFindCount
      *
+     * jpn: 通常のcount
      */
     public function testFindCount(){
         $result = $this->YasdPost->find('count');
@@ -80,11 +104,25 @@ class SoftDeletableTestCase extends CakeTestCase{
     }
 
     /**
-     * testDependentFind
+     * testDependentHasOneFind
+     *
+     * jpn: hasOneで紐づいているModelについてもSoftDeletable属性をチェックする
+     */
+    public function testDependentHasOneFind(){
+        $result = $this->YasdPost->findById(1);
+        $this->assertIdentical($result['YasdMemo']['id'], '1');
+
+        $this->YasdPost->YasdMemo->delete(1);
+        $result = $this->YasdPost->findById(1);
+        $this->assertIdentical($result['YasdMemo']['id'], null);
+    }
+
+    /**
+     * testDependentHasManyFind
      *
      * jpn: hasManyで紐づいているModelについてもSoftDeletable属性をチェックする
      */
-    public function testDependentFind(){
+    public function testDependentHasManyFind(){
         $result = $this->YasdPost->findById(1);
         $this->assertIdentical(count($result['YasdComment']), 2);
 
@@ -111,11 +149,30 @@ class SoftDeletableTestCase extends CakeTestCase{
     }
 
     /**
-     * testDependentSoftDelete
+     * testDependentHasOneSoftDelete
      *
-     * jpn: hasMany先のSoftDeletableが有効に発動する
+     * jpn: hasOne先のdependentされたModelのSoftDeletableが有効に発動する
      */
-    public function testDependentSoftDelete(){
+    public function testDependentHasOneSoftDelete(){
+        $result = $this->YasdPost->YasdMemo->find('all');
+        $this->assertIdentical(count($result), 2);
+
+        $this->YasdPost->delete(1);
+
+        $result = $this->YasdPost->YasdMemo->find('all');
+        $this->assertIdentical(count($result), 1);
+
+        $this->YasdPost->YasdMemo->disableSoftDeletable();
+        $result = $this->YasdPost->YasdMemo->find('all');
+        $this->assertIdentical(count($result), 2);
+    }
+
+    /**
+     * testDependentHasManySoftDelete
+     *
+     * jpn: hasMany先のdependentされたModelのSoftDeletableが有効に発動する
+     */
+    public function testDependentHasManySoftDelete(){
         $result = $this->YasdPost->YasdComment->find('all');
         $this->assertIdentical(count($result), 2);
 
