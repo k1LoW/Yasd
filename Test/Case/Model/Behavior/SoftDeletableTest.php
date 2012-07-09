@@ -110,7 +110,7 @@ class SoftDeletableTestCase extends CakeTestCase{
      */
     public function testDependentHasOneFind(){
         $result = $this->YasdPost->findById(1);
-        $this->assertIdentical($result['YasdMemo']['id'], '1');
+        $this->assertIdentical((string)$result['YasdMemo']['id'], '1');
 
         $this->YasdPost->YasdMemo->delete(1);
         $result = $this->YasdPost->findById(1);
