@@ -5,27 +5,28 @@ App::uses('AppModel', 'Model');
 class YasdPost extends CakeTestModel{
 
     public $name = 'YasdPost';
-    public $actsAs = array('Yasd.SoftDeletable');
+    public $actsAs = array('Yasd.SoftDeletable',
+                           'Containable');
 
     public $hasOne = array(
-        'YasdMemo' => array(
-            'className' => 'YasdMemo',
-            'foreignKey' => 'yasd_post_id',
-            'dependent' => true,
-        )
-    );
+                           'YasdMemo' => array(
+                                               'className' => 'YasdMemo',
+                                               'foreignKey' => 'yasd_post_id',
+                                               'dependent' => true,
+                                               )
+                           );
 
     public $hasMany = array(
-        'YasdComment' => array(
-            'className' => 'YasdComment',
-            'foreignKey' => 'yasd_post_id',
-            'dependent' => true,
-        )
-    );
+                            'YasdComment' => array(
+                                                   'className' => 'YasdComment',
+                                                   'foreignKey' => 'yasd_post_id',
+                                                   'dependent' => true,
+                                                   )
+                            );
 
     public $hasAndBelongsToMany = array(
                                         'YasdTag'
-    );
+                                        );
 }
 
 class YasdMemo extends CakeTestModel{
@@ -34,11 +35,11 @@ class YasdMemo extends CakeTestModel{
     public $actsAs = array('Yasd.SoftDeletable');
 
     public $belongsTo = array(
-        'YasdPost' => array(
-            'className' => 'YasdPost',
-            'foreignKey' => 'yasd_post_id',
-        )
-    );
+                              'YasdPost' => array(
+                                                  'className' => 'YasdPost',
+                                                  'foreignKey' => 'yasd_post_id',
+                                                  )
+                              );
 }
 
 class YasdComment extends CakeTestModel{
@@ -47,11 +48,11 @@ class YasdComment extends CakeTestModel{
     public $actsAs = array('Yasd.SoftDeletable');
 
     public $belongsTo = array(
-        'YasdPost' => array(
-            'className' => 'YasdPost',
-            'foreignKey' => 'yasd_post_id',
-        )
-    );
+                              'YasdPost' => array(
+                                                  'className' => 'YasdPost',
+                                                  'foreignKey' => 'yasd_post_id',
+                                                  )
+                              );
 }
 
 class YasdTag extends CakeTestModel{
@@ -272,4 +273,21 @@ class SoftDeletableTestCase extends CakeTestCase{
         $result = $this->YasdPost->find('all');
         $this->assertIdentical(count($result), 1);
     }
+
+    /**
+     * testFindWithContain
+     *
+     * jpn: containを利用しているときもhasMany先のSoftDeletableは有効
+     */
+    public function testFindWithContain(){
+        $result = $this->YasdPost->find('first', array('conditions' => array('YasdPost.id' => 1),
+                                                       'contain' => 'YasdComment'));
+        $this->assertIdentical(count($result['YasdComment']), 2);
+
+        $this->YasdPost->YasdComment->delete(1);
+        $result = $this->YasdPost->find('first', array('conditions' => array('YasdPost.id' => 1),
+                                                       'contain' => 'YasdComment'));
+        $this->assertIdentical(count($result['YasdComment']), 1);
+    }
+
 }
