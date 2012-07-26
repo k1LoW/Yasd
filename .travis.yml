@@ -10,7 +10,6 @@ env:
   - DB=pgsql CAKEPHP=2.2.0
 
 before_script:
-  - ls -la /home/vagrant/builds/k1LoW/
   - sh -c "if [ '$DB' = 'mysql' ]; then mysql -e 'DROP DATABASE IF EXISTS cakephp_test;'; fi"
   - sh -c "if [ '$DB' = 'mysql' ]; then mysql -e 'CREATE DATABASE cakephp_test;'; fi"
   - sh -c "if [ '$DB' = 'pgsql' ]; then psql -c 'CREATE DATABASE cakephp_test;' -U postgres; fi"
@@ -31,4 +30,4 @@ script:
   - ./lib/Cake/Console/cake test Yasd Model/Behavior/SoftDeletable --stderr
 
 after_script:
-  - rm -rf /home/vagrant/builds/k1LoW/Yasd
+  - rm -rf ../
