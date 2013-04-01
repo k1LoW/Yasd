@@ -177,8 +177,8 @@ class SoftDeletableBehavior extends ModelBehavior {
      */
     public function softDeleteAll(Model $model, $conditions = true){
         $fields = array(
-            $this->settings[$model->alias]['field_date'] => '"' . date('Y-m-d H:i:s') . '"',
             $this->settings[$model->alias]['field'] => 1,
+            $this->settings[$model->alias]['field_date'] => "'" . date('Y-m-d H:i:s') . "'",
         );
         return $model->updateAll($fields, $conditions);
     }
