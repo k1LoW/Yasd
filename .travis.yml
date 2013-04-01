@@ -6,8 +6,10 @@ php:
 
 env:
   - DB=mysql CAKEPHP=2.1.4
-  - DB=mysql CAKEPHP=2.2.0
-  - DB=pgsql CAKEPHP=2.2.0
+  - DB=mysql CAKEPHP=2.2.7
+  - DB=mysql CAKEPHP=2.3.1
+  - DB=pgsql CAKEPHP=2.2.7
+  - DB=pgsql CAKEPHP=2.3.1
 
 before_script:
   - sh -c "if [ '$DB' = 'mysql' ]; then mysql -e 'DROP DATABASE IF EXISTS cakephp_test;'; fi"
@@ -19,7 +21,7 @@ before_script:
   - chmod -R 777 ./cakephp/app/tmp
   - echo "<?php
     App::build(array(
-    'Plugin' => array('/home/vagrant/builds/k1LoW/'),
+    'Plugin' => array('/home/travis/build/k1LoW/'),
     ));
     CakePlugin::loadAll();
     " > cakephp/app/Config/bootstrap.php

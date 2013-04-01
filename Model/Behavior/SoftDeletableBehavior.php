@@ -20,10 +20,10 @@ class SoftDeletableBehavior extends ModelBehavior {
 
     public function setUp(Model $model, $settings = array()) {
         $defaults = array(
-                          'field' => 'delete_flg',
-                          'field_date' => 'deleted',
-                          'enable' => true,
-                          );
+            'field' => 'delete_flg',
+            'field_date' => 'deleted',
+            'enable' => true,
+        );
         // Default settings
         $this->settings[$model->alias] = Set::merge($defaults, $settings);
         $this->settings[$model->alias]['hasField'] = $model->hasField($this->settings[$model->alias]['field']);
@@ -48,11 +48,11 @@ class SoftDeletableBehavior extends ModelBehavior {
             $include = true;
 
             $fields = array(
-                            $Db->name($model->alias) . '.' . $Db->name($this->settings[$model->alias]['field']),
-                            $Db->name($this->settings[$model->alias]['field']),
-                            $model->alias . '.' . $this->settings[$model->alias]['field'],
-                            $this->settings[$model->alias]['field']
-                            );
+                $Db->name($model->alias) . '.' . $Db->name($this->settings[$model->alias]['field']),
+                $Db->name($this->settings[$model->alias]['field']),
+                $model->alias . '.' . $this->settings[$model->alias]['field'],
+                $this->settings[$model->alias]['field']
+            );
 
             foreach($fields as $field) {
                 if (preg_match('/^' . preg_quote($field) . '[\s=!]+/i', $queryData['conditions']) || preg_match('/\\x20+' . preg_quote($field) . '[\s=!]+/i', $queryData['conditions'])) {
@@ -63,9 +63,9 @@ class SoftDeletableBehavior extends ModelBehavior {
         } else if (empty($queryData['conditions'])) {
             $include = true;
         }  else if (
-                    !in_array($this->settings[$model->alias]['field'], array_keys($queryData['conditions']), true)
-                    && !in_array($model->alias . '.' . $this->settings[$model->alias]['field'], array_keys($queryData['conditions']), true)
-                    ) {
+            !in_array($this->settings[$model->alias]['field'], array_keys($queryData['conditions']), true)
+            && !in_array($model->alias . '.' . $this->settings[$model->alias]['field'], array_keys($queryData['conditions']), true)
+        ) {
             $include = true;
         }
 
@@ -78,7 +78,7 @@ class SoftDeletableBehavior extends ModelBehavior {
                 $queryData['conditions'] = '(' . $Db->name($model->alias) . '.' . $Db->name($this->settings[$model->alias]['field']) . ' IS NULL OR ' . $Db->name($model->alias) . '.' . $Db->name($this->settings[$model->alias]['field']) . '!= 1) AND ' . $queryData['conditions'];
             } else {
                 $queryData['conditions'][] = array('OR' => array(array($model->alias . '.' . $this->settings[$model->alias]['field'] => '0'),
-                                                                 array($model->alias . '.' . $this->settings[$model->alias]['field'] => null)));
+                        array($model->alias . '.' . $this->settings[$model->alias]['field'] => null)));
             }
         }
 
@@ -92,12 +92,12 @@ class SoftDeletableBehavior extends ModelBehavior {
                 }
                 if (empty($model->{$binding}[$assoc]['conditions'])) {
                     $model->{$binding}[$assoc]['conditions'] = array('OR' => array(array($assoc . '.' . $this->settings[$assoc]['field'] => '0'),
-                                                                                   array($assoc . '.' . $this->settings[$assoc]['field'] => null)));
+                            array($assoc . '.' . $this->settings[$assoc]['field'] => null)));
                 } else if(is_string($model->{$binding}[$assoc]['conditions'])) {
                     $model->{$binding}[$assoc]['conditions'] = '(' . $Db->name($assoc) . '.' . $Db->name($this->settings[$assoc]['field']) . ' IS NULL OR ' . $Db->name($assoc) . '.' . $Db->name($this->settings[$assoc]['field']) . '!= 1) AND ' . $model->{$binding}[$assoc]['conditions'];
                 } else {
                     $model->{$binding}[$assoc]['conditions'][] = array('OR' => array(array($assoc . '.' . $this->settings[$assoc]['field'] => '0'),
-                                                                                   array($assoc . '.' . $this->settings[$assoc]['field'] => null)));
+                            array($assoc . '.' . $this->settings[$assoc]['field'] => null)));
                 }
             }
         }
@@ -116,8 +116,8 @@ class SoftDeletableBehavior extends ModelBehavior {
     public function softDelete(Model $model, $id, $cascade = false) {
         $attributes = $this->settings[$model->alias];
         $data = array($model->alias => array(
-                                             $attributes['field'] => 1
-                                             ));
+                $attributes['field'] => 1
+            ));
 
         if ($this->settings[$model->alias]['hasFieldDate'] && isset($attributes['field_date'])) {
             $data[$model->alias][$attributes['field_date']] = date('Y-m-d H:i:s');
@@ -204,8 +204,8 @@ class SoftDeletableBehavior extends ModelBehavior {
                         $dependentModel->deleteAll($conditions);
                     } else {
                         $records = $dependentModel->find('all', array(
-                                                                      'conditions' => $conditions, 'fields' => $dependentModel->primaryKey
-                                                                      ));
+                                'conditions' => $conditions, 'fields' => $dependentModel->primaryKey
+                            ));
                         if (!empty($records)) {
                             foreach ($records as $record) {
                                 $dependentModel->delete($record[$dependentModel->alias][$dependentModel->primaryKey]);
@@ -231,11 +231,11 @@ class SoftDeletableBehavior extends ModelBehavior {
         foreach ($model->hasAndBelongsToMany as $assoc => $data) {
             list($plugin, $joinModel) = pluginSplit($data['with']);
             $records = $model->{$joinModel}->find('all', array(
-                                                               'conditions' => array($model->{$joinModel}->escapeField($data['foreignKey']) => $id),
-                                                               'fields' => $model->{$joinModel}->primaryKey,
-                                                               'recursive' => -1,
-                                                               'callbacks' => false
-                                                               ));
+                    'conditions' => array($model->{$joinModel}->escapeField($data['foreignKey']) => $id),
+                    'fields' => $model->{$joinModel}->primaryKey,
+                    'recursive' => -1,
+                    'callbacks' => false
+                ));
             if (!empty($records)) {
                 foreach ($records as $record) {
                     $model->{$joinModel}->delete($record[$model->{$joinModel}->alias][$model->{$joinModel}->primaryKey]);
