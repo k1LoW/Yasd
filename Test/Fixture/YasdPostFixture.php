@@ -13,21 +13,21 @@ class YasdPostFixture extends CakeTestFixture {
     );
 
     var $records = array(
-                         array(
-                               'title' => 'Title',
-                               'body' => 'Yasd Test',
-                               'created' => '2012-07-05 00:00:00',
-                               'modified' => '2012-07-05 00:00:00',
-                               'deleted' => null,
-                               'delete_flg' => null
-                               ),
-                         array(
-                               'title' => 'Title2',
-                               'body' => 'Yasd Test',
-                               'created' => '2012-07-05 00:00:00',
-                               'modified' => '2012-07-05 00:00:00',
-                               'deleted' => null,
-                               'delete_flg' => null
-                               ),
-                         );
+        array(
+            'title' => 'Title',
+            'body' => 'Yasd Test',
+            'created' => '2012-07-05 00:00:00',
+            'modified' => '2012-07-05 00:00:00',
+            'deleted' => null,
+            'delete_flg' => null
+        ),
+        array(
+            'title' => 'Title2',
+            'body' => 'Yasd Test2',
+            'created' => '2012-07-05 00:00:00',
+            'modified' => '2012-07-05 00:00:00',
+            'deleted' => null,
+            'delete_flg' => null
+        ),
+    );
 }

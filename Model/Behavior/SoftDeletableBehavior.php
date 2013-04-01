@@ -171,6 +171,19 @@ class SoftDeletableBehavior extends ModelBehavior {
     }
 
     /**
+     * softDeleteAll
+     *
+     * @param Model $model, $conditions
+     */
+    public function softDeleteAll(Model $model, $conditions = true){
+        $fields = array(
+            $this->settings[$model->alias]['field'] => 1,
+            $this->settings[$model->alias]['field_date'] => '"' . date('Y-m-d H:i:s') . '"'
+        );
+        return $model->updateAll($fields, $conditions);
+    }
+
+    /**
      * Cascades model deletes through associated hasMany and hasOne child records.
      *
      * @see CakePHP 2.1.3 lib/Cake/Model/Model.php

@@ -294,4 +294,38 @@ class SoftDeletableTestCase extends CakeTestCase{
         $this->assertIdentical(count($result['YasdComment']), 1);
     }
 
+    /**
+     * testSoftDeleteAll
+     *
+     * jpn: Model::softDeleteAll()のテスト
+     */
+    public function testSoftDeleteAll(){
+        $result = $this->YasdPost->softDeleteAll();
+        $this->assertTrue($result);
+
+        $result = $this->YasdPost->find('all');
+        $this->assertIdentical(count($result), 0);
+
+        $this->YasdPost->disableSoftDeletable();
+        $result = $this->YasdPost->find('all');
+        $this->assertIdentical(count($result), 2);
+    }
+
+    /**
+     * testSoftDeleteAllWithConditions
+     *
+     * jpn: Model::softDeleteAll()のテスト
+     */
+    public function testSoftDeleteAllWithConditions(){
+        $result = $this->YasdPost->softDeleteAll(array('YasdPost.title' => 'Title2'));
+        $this->assertTrue($result);
+
+        $result = $this->YasdPost->find('all');
+        $this->assertIdentical(count($result), 1);
+
+        $this->YasdPost->disableSoftDeletable();
+        $result = $this->YasdPost->find('all');
+        $this->assertIdentical(count($result), 2);
+    }
+
 }
