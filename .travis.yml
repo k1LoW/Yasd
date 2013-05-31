@@ -3,13 +3,14 @@ language: php
 php:
   - 5.2
   - 5.3
+  - 5.4
 
 env:
-  - DB=mysql CAKEPHP=2.1.4
-  - DB=mysql CAKEPHP=2.2.7
-  - DB=mysql CAKEPHP=2.3.1
-  - DB=pgsql CAKEPHP=2.2.7
-  - DB=pgsql CAKEPHP=2.3.1
+  - DB=mysql CAKEPHP=2.1.5
+  - DB=mysql CAKEPHP=2.2.8
+  - DB=mysql CAKEPHP=2.3.5
+  - DB=pgsql CAKEPHP=2.2.8
+  - DB=pgsql CAKEPHP=2.3.5
 
 before_script:
   - sh -c "if [ '$DB' = 'mysql' ]; then mysql -e 'DROP DATABASE IF EXISTS cakephp_test;'; fi"
@@ -30,7 +31,3 @@ before_script:
 
 script:
   - ./lib/Cake/Console/cake test Yasd Model/Behavior/SoftDeletable --stderr
-
-after_script:
-  - cd ../
-  - rm -rf *
