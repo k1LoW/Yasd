@@ -87,7 +87,8 @@ class SoftDeletableBehavior extends ModelBehavior {
                 continue;
             }
             foreach ($model->{$binding} as $assoc => $value) {
-                if (empty($this->settings[$assoc]['enable'])) {
+                if (empty($this->settings[$assoc]['enable'])
+                    || !$this->settings[$assoc]['hasField']) {
                     continue;
                 }
                 if (empty($model->{$binding}[$assoc]['conditions'])) {

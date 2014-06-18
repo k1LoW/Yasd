@@ -68,6 +68,35 @@ class YasdPostsYasdTag extends CakeTestModel{
     public $actsAs = array('Yasd.SoftDeletable');
 }
 
+class YasdPostNofield extends CakeTestModel{
+
+    public $name = 'YasdPostNofield';
+    public $actsAs = array(
+        'Yasd.SoftDeletable',
+        'Containable'
+    );
+
+    public $hasMany = array(
+        'YasdCommentNofield' => array(
+            'className' => 'YasdCommentNofield',
+            'foreignKey' => 'yasd_post_nofield_id',
+            'dependent' => true,
+        )
+    );
+}
+
+class YasdCommentNofield extends CakeTestModel{
+
+    public $name = 'YasdCommentNofield';
+
+    public $belongsTo = array(
+        'YasdPostNofield' => array(
+            'className' => 'YasdPostNofield',
+            'foreignKey' => 'yasd_post_nofield_id',
+        )
+    );
+}
+
 class SoftDeletableTestCase extends CakeTestCase{
 
     public $fixtures = array(
@@ -76,9 +105,11 @@ class SoftDeletableTestCase extends CakeTestCase{
         'plugin.Yasd.yasd_comment',
         'plugin.Yasd.yasd_posts_yasd_tag',
         'plugin.Yasd.yasd_tag',
+        'plugin.Yasd.yasd_post_nofield',
+        'plugin.Yasd.yasd_comment_nofield',
     );
 
-    function setUp() {
+    public function setUp() {
         $this->YasdPost = new YasdPost();
         $this->YasdPostFixture = ClassRegistry::init('YasdPostFixture');
         $this->YasdPost->enableSoftDeletable();
@@ -87,11 +118,16 @@ class SoftDeletableTestCase extends CakeTestCase{
         $this->YasdPost->YasdTag->enableSoftDeletable();
 
         $this->YasdPostsYasdTag = new YasdPostsYasdTag();
+
+        $this->YasdPostNofield= new YasdPostNofield();
+        $this->YasdPostNofield->enableSoftDeletable();
     }
 
-    function tearDown() {
+    public function tearDown() {
         unset($this->YasdPost);
         unset($this->YasdPostFixture);
+        unset($this->YasdPostsYasdTag);
+        unset($this->YasdPostNofield);
     }
 
     /**
@@ -328,4 +364,24 @@ class SoftDeletableTestCase extends CakeTestCase{
         $this->assertIdentical(count($result), 2);
     }
 
+    /**
+     * testFindNofield
+     *
+     * jpn: 通常のfind
+     *      delete_flgが存在しない場合は論理削除は効かない
+     */
+    public function testFindNofield(){
+        $result = $this->YasdPostNofield->find('all');
+        $this->assertIdentical(count($result), 2);
+    }
+
+    /**
+     * testFindCountNofield
+     *
+     * jpn: 通常のcount
+     */
+    public function testFindCountNofield(){
+        $result = $this->YasdPostNofield->find('count');
+        $this->assertIdentical($result, 2);
+    }
 }
