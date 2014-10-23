@@ -1,4 +1,4 @@
-# Yer Another SoftDeletable Behavior
+# Yet Another SoftDeletable Behavior
 
 My own custom SoftDeletable Behavior
 
