@@ -36,8 +36,7 @@ class SoftDeletableBehavior extends ModelBehavior {
      * @param Model $model, $queryData
      */
     public function beforeFind(Model $model, $queryData){
-        if (!$this->settings[$model->alias]['enable']
-            || !$this->settings[$model->alias]['hasField']) {
+        if (!$this->hasFields($model)) {
             return $queryData;
         }
         $Db = ConnectionManager::getDataSource($model->useDbConfig);
@@ -106,11 +105,10 @@ class SoftDeletableBehavior extends ModelBehavior {
     }
 
     public function beforeDelete(Model $model, $cascade = true) {
-        if ($this->settings[$model->alias]['enable'] && $this->settings[$model->alias]['hasField']) {
+        if ($this->hasFields($model)) {
             $this->softDelete($model, $model->id, $cascade);
             return false;
         }
-
         return true;
     }
 
@@ -256,5 +254,17 @@ class SoftDeletableBehavior extends ModelBehavior {
                 }
             }
         }
+    }
+
+    /**
+     * hasFields
+     *
+     */
+    private function hasFields(Model $model){
+        if (!$this->settings[$model->alias]['enable']
+            || !$this->settings[$model->alias]['hasField']) {
+            return false;
+        }
+        return true;
     }
 }
