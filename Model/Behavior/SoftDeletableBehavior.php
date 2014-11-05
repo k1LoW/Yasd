@@ -62,13 +62,15 @@ class SoftDeletableBehavior extends ModelBehavior {
             throw new YasdException();
         }
         $attributes = $this->settings[$model->alias];
-        $data = array($model->alias => array(
-            $attributes['field'] => 1
-        ));
 
-        if ($this->settings[$model->alias]['hasFieldDate'] && isset($attributes['field_date'])) {
-            $data[$model->alias][$attributes['field_date']] = date('Y-m-d H:i:s');
-        }
+        $data = array($model->alias => array());
+        if ($attributes['field']) {
+            $data[$model->alias][$attributes['field']] = 1;
+        };
+
+        if ($attributes['field_date']) {
+            $data[$model->alias][$attributes['field_date']] = date('Y-m-d H:i:s');;
+        };
 
         foreach(array_merge(array_keys($data[$model->alias]), array('field', 'field_date', 'find', 'delete')) as $field) {
             unset($attributes[$field]);
@@ -126,12 +128,13 @@ class SoftDeletableBehavior extends ModelBehavior {
         if (!$this->enabled($model)) {
             throw new YasdException();
         }
+        $attributes = $this->settings[$model->alias];
         $fields = array();
-        if ($this->settings[$model->alias]['hasField']) {
-            $fields[$this->settings[$model->alias]['field']] = 1;
+        if ($attributes['field']) {
+            $fields[$attributes['field']] = 1;
         }
-        if ($this->settings[$model->alias]['hasFieldDate']) {
-            $fields[$this->settings[$model->alias]['field_date']] = "'" . date('Y-m-d H:i:s') . "'";
+        if ($attributes['field_date']) {
+            $fields[$attributes['field_date']] = "'" . date('Y-m-d H:i:s') . "'";
         }
         return $model->updateAll($fields, $conditions);
     }
@@ -170,8 +173,8 @@ class SoftDeletableBehavior extends ModelBehavior {
                         $dependentModel->deleteAll($conditions);
                     } else {
                         $records = $dependentModel->find('all', array(
-                                'conditions' => $conditions, 'fields' => $dependentModel->primaryKey
-                            ));
+                            'conditions' => $conditions, 'fields' => $dependentModel->primaryKey
+                        ));
                         if (!empty($records)) {
                             foreach ($records as $record) {
                                 $dependentModel->delete($record[$dependentModel->alias][$dependentModel->primaryKey]);
@@ -197,11 +200,11 @@ class SoftDeletableBehavior extends ModelBehavior {
         foreach ($model->hasAndBelongsToMany as $assoc => $data) {
             list($plugin, $joinModel) = pluginSplit($data['with']);
             $records = $model->{$joinModel}->find('all', array(
-                    'conditions' => array($model->{$joinModel}->escapeField($data['foreignKey']) => $id),
-                    'fields' => $model->{$joinModel}->primaryKey,
-                    'recursive' => -1,
-                    'callbacks' => false
-                ));
+                'conditions' => array($model->{$joinModel}->escapeField($data['foreignKey']) => $id),
+                'fields' => $model->{$joinModel}->primaryKey,
+                'recursive' => -1,
+                'callbacks' => false
+            ));
             if (!empty($records)) {
                 foreach ($records as $record) {
                     $model->{$joinModel}->delete($record[$model->{$joinModel}->alias][$model->{$joinModel}->primaryKey]);
@@ -282,7 +285,7 @@ class SoftDeletableBehavior extends ModelBehavior {
                 $queryData['conditions'] = '(' . $Db->name($model->alias) . '.' . $Db->name($checkFieldName) . ' IS NULL OR ' . $Db->name($model->alias) . '.' . $Db->name($checkFieldName) . '!= 1) AND ' . $queryData['conditions'];
             } else {
                 $queryData['conditions'][] = array('OR' => array(array($model->alias . '.' . $checkFieldName => '0'),
-                        array($model->alias . '.' . $checkFieldName => null)));
+                                                                 array($model->alias . '.' . $checkFieldName => null)));
             }
         }
 
@@ -293,12 +296,12 @@ class SoftDeletableBehavior extends ModelBehavior {
             foreach ($model->{$binding} as $assoc => $value) {
                 if (empty($model->{$binding}[$assoc]['conditions'])) {
                     $model->{$binding}[$assoc]['conditions'] = array('OR' => array(array($assoc . '.' . $checkFieldName => '0'),
-                            array($assoc . '.' . $checkFieldName => null)));
+                                                                                   array($assoc . '.' . $checkFieldName => null)));
                 } else if(is_string($model->{$binding}[$assoc]['conditions'])) {
                     $model->{$binding}[$assoc]['conditions'] = '(' . $Db->name($assoc) . '.' . $Db->name($checkFieldName) . ' IS NULL OR ' . $Db->name($assoc) . '.' . $Db->name($checkFieldName) . '!= 1) AND ' . $model->{$binding}[$assoc]['conditions'];
                 } else {
                     $model->{$binding}[$assoc]['conditions'][] = array('OR' => array(array($assoc . '.' . $checkFieldName => '0'),
-                            array($assoc . '.' . $checkFieldName => null)));
+                                                                                     array($assoc . '.' . $checkFieldName => null)));
                 }
             }
         }
