@@ -3,6 +3,7 @@
  * SoftDeletableBehavior
  *
  */
+App::uses('YasdException', 'Yasd.Error');
 /**
  * Original: SoftDeletable Behavior class file.
  *
@@ -36,76 +37,20 @@ class SoftDeletableBehavior extends ModelBehavior {
      * @param Model $model, $queryData
      */
     public function beforeFind(Model $model, $queryData){
-        if (!$this->hasFields($model)) {
+        if (!$this->enabled($model)) {
             return $queryData;
         }
-        $Db = ConnectionManager::getDataSource($model->useDbConfig);
-        $include = false;
-
-        if (!empty($queryData['conditions']) && is_string($queryData['conditions'])) {
-            // string condition
-            $include = true;
-
-            $fields = array(
-                $Db->name($model->alias) . '.' . $Db->name($this->settings[$model->alias]['field']),
-                $Db->name($this->settings[$model->alias]['field']),
-                $model->alias . '.' . $this->settings[$model->alias]['field'],
-                $this->settings[$model->alias]['field']
-            );
-
-            foreach($fields as $field) {
-                if (preg_match('/^' . preg_quote($field) . '[\s=!]+/i', $queryData['conditions']) || preg_match('/\\x20+' . preg_quote($field) . '[\s=!]+/i', $queryData['conditions'])) {
-                    $include = false;
-                    break;
-                }
-            }
-        } else if (empty($queryData['conditions'])) {
-            $include = true;
-        }  else if (
-            !in_array($this->settings[$model->alias]['field'], array_keys($queryData['conditions']), true)
-            && !in_array($model->alias . '.' . $this->settings[$model->alias]['field'], array_keys($queryData['conditions']), true)
-        ) {
-            $include = true;
+        if ($this->settings[$model->alias]['hasField'] && $this->settings[$model->alias]['field']) {
+            return $this->buildConditionWithFieldOption($model, $queryData);
+        } else if ($this->settings[$model->alias]['hasFieldDate'] && $this->settings[$model->alias]['field_date']) {
+            return $this->buildConditionWithFieldDateOption($model, $queryData);
+        } else {
+            throw new YasdException();
         }
-
-        if ($include) {
-            if (empty($queryData['conditions'])) {
-                $queryData['conditions'] = array();
-            }
-
-            if (is_string($queryData['conditions'])) {
-                $queryData['conditions'] = '(' . $Db->name($model->alias) . '.' . $Db->name($this->settings[$model->alias]['field']) . ' IS NULL OR ' . $Db->name($model->alias) . '.' . $Db->name($this->settings[$model->alias]['field']) . '!= 1) AND ' . $queryData['conditions'];
-            } else {
-                $queryData['conditions'][] = array('OR' => array(array($model->alias . '.' . $this->settings[$model->alias]['field'] => '0'),
-                        array($model->alias . '.' . $this->settings[$model->alias]['field'] => null)));
-            }
-        }
-
-        foreach(array('hasOne', 'hasMany', 'hasAndBelongsToMany') as $binding) {
-            if (empty($model->$binding)) {
-                continue;
-            }
-            foreach ($model->{$binding} as $assoc => $value) {
-                if (empty($this->settings[$assoc]['enable'])
-                    || !$this->settings[$assoc]['hasField']) {
-                    continue;
-                }
-                if (empty($model->{$binding}[$assoc]['conditions'])) {
-                    $model->{$binding}[$assoc]['conditions'] = array('OR' => array(array($assoc . '.' . $this->settings[$assoc]['field'] => '0'),
-                            array($assoc . '.' . $this->settings[$assoc]['field'] => null)));
-                } else if(is_string($model->{$binding}[$assoc]['conditions'])) {
-                    $model->{$binding}[$assoc]['conditions'] = '(' . $Db->name($assoc) . '.' . $Db->name($this->settings[$assoc]['field']) . ' IS NULL OR ' . $Db->name($assoc) . '.' . $Db->name($this->settings[$assoc]['field']) . '!= 1) AND ' . $model->{$binding}[$assoc]['conditions'];
-                } else {
-                    $model->{$binding}[$assoc]['conditions'][] = array('OR' => array(array($assoc . '.' . $this->settings[$assoc]['field'] => '0'),
-                            array($assoc . '.' . $this->settings[$assoc]['field'] => null)));
-                }
-            }
-        }
-        return $queryData;
     }
 
     public function beforeDelete(Model $model, $cascade = true) {
-        if ($this->hasFields($model)) {
+        if ($this->enabled($model)) {
             $this->softDelete($model, $model->id, $cascade);
             return false;
         }
@@ -113,10 +58,13 @@ class SoftDeletableBehavior extends ModelBehavior {
     }
 
     public function softDelete(Model $model, $id, $cascade = false) {
+        if (!$this->enabled($model)) {
+            throw new YasdException();
+        }
         $attributes = $this->settings[$model->alias];
         $data = array($model->alias => array(
-                $attributes['field'] => 1
-            ));
+            $attributes['field'] => 1
+        ));
 
         if ($this->settings[$model->alias]['hasFieldDate'] && isset($attributes['field_date'])) {
             $data[$model->alias][$attributes['field_date']] = date('Y-m-d H:i:s');
@@ -175,10 +123,16 @@ class SoftDeletableBehavior extends ModelBehavior {
      * @param Model $model, $conditions
      */
     public function softDeleteAll(Model $model, $conditions = true){
-        $fields = array(
-            $this->settings[$model->alias]['field'] => 1,
-            $this->settings[$model->alias]['field_date'] => "'" . date('Y-m-d H:i:s') . "'",
-        );
+        if (!$this->enabled($model)) {
+            throw new YasdException();
+        }
+        $fields = array();
+        if ($this->settings[$model->alias]['hasField']) {
+            $fields[$this->settings[$model->alias]['field']] = 1;
+        }
+        if ($this->settings[$model->alias]['hasFieldDate']) {
+            $fields[$this->settings[$model->alias]['field_date']] = "'" . date('Y-m-d H:i:s') . "'";
+        }
         return $model->updateAll($fields, $conditions);
     }
 
@@ -257,14 +211,166 @@ class SoftDeletableBehavior extends ModelBehavior {
     }
 
     /**
-     * hasFields
+     * enabled
      *
      */
-    private function hasFields(Model $model){
-        if (!$this->settings[$model->alias]['enable']
-            || !$this->settings[$model->alias]['hasField']) {
+    private function enabled(Model $model){
+        if (!$this->settings[$model->alias]['enable']) {
             return false;
         }
+
+        if (!$this->settings[$model->alias]['hasField']
+            && $this->settings[$model->alias]['field']
+        ) {
+            return false;
+        }
+
+        if (!$this->settings[$model->alias]['hasFieldDate']
+            && $this->settings[$model->alias]['field_date']
+        ) {
+            return false;
+        }
+
         return true;
+    }
+
+    /**
+     * buildConditionWithFieldOption
+     *
+     */
+    private function buildConditionWithFieldOption(Model $model, $queryData) {
+        $Db = ConnectionManager::getDataSource($model->useDbConfig);
+        $include = false;
+
+        if (!$this->settings[$model->alias]['hasField'] || !$this->settings[$model->alias]['field']) {
+            throw new YasdException();
+        }
+        $checkFieldName = $this->settings[$model->alias]['field'];
+
+        if (!empty($queryData['conditions']) && is_string($queryData['conditions'])) {
+            // string condition
+            $include = true;
+
+            $fields = array(
+                $Db->name($model->alias) . '.' . $Db->name($checkFieldName),
+                $Db->name($checkFieldName),
+                $model->alias . '.' . $checkFieldName,
+                $checkFieldName
+            );
+
+            foreach($fields as $field) {
+                if (preg_match('/^' . preg_quote($field) . '[\s=!]+/i', $queryData['conditions']) || preg_match('/\\x20+' . preg_quote($field) . '[\s=!]+/i', $queryData['conditions'])) {
+                    $include = false;
+                    break;
+                }
+            }
+        } else if (empty($queryData['conditions'])) {
+            $include = true;
+        }  else if (
+            !in_array($checkFieldName, array_keys($queryData['conditions']), true)
+            && !in_array($model->alias . '.' . $checkFieldName, array_keys($queryData['conditions']), true)
+        ) {
+            $include = true;
+        }
+
+        if ($include) {
+            if (empty($queryData['conditions'])) {
+                $queryData['conditions'] = array();
+            }
+
+            if (is_string($queryData['conditions'])) {
+                $queryData['conditions'] = '(' . $Db->name($model->alias) . '.' . $Db->name($checkFieldName) . ' IS NULL OR ' . $Db->name($model->alias) . '.' . $Db->name($checkFieldName) . '!= 1) AND ' . $queryData['conditions'];
+            } else {
+                $queryData['conditions'][] = array('OR' => array(array($model->alias . '.' . $checkFieldName => '0'),
+                        array($model->alias . '.' . $checkFieldName => null)));
+            }
+        }
+
+        foreach(array('hasOne', 'hasMany', 'hasAndBelongsToMany') as $binding) {
+            if (empty($model->$binding)) {
+                continue;
+            }
+            foreach ($model->{$binding} as $assoc => $value) {
+                if (empty($model->{$binding}[$assoc]['conditions'])) {
+                    $model->{$binding}[$assoc]['conditions'] = array('OR' => array(array($assoc . '.' . $checkFieldName => '0'),
+                            array($assoc . '.' . $checkFieldName => null)));
+                } else if(is_string($model->{$binding}[$assoc]['conditions'])) {
+                    $model->{$binding}[$assoc]['conditions'] = '(' . $Db->name($assoc) . '.' . $Db->name($checkFieldName) . ' IS NULL OR ' . $Db->name($assoc) . '.' . $Db->name($checkFieldName) . '!= 1) AND ' . $model->{$binding}[$assoc]['conditions'];
+                } else {
+                    $model->{$binding}[$assoc]['conditions'][] = array('OR' => array(array($assoc . '.' . $checkFieldName => '0'),
+                            array($assoc . '.' . $checkFieldName => null)));
+                }
+            }
+        }
+        return $queryData;
+    }
+
+    /**
+     * buildConditionWithFieldDateOption
+     *
+     */
+    private function buildConditionWithFieldDateOption(Model $model, $queryData) {
+        $Db = ConnectionManager::getDataSource($model->useDbConfig);
+        $include = false;
+
+        if (!$this->settings[$model->alias]['hasFieldDate'] || !$this->settings[$model->alias]['field_date']) {
+            throw new YasdException();
+        }
+
+        $checkFieldName = $this->settings[$model->alias]['field_date'];
+
+        if (!empty($queryData['conditions']) && is_string($queryData['conditions'])) {
+            // string condition
+            $include = true;
+
+            $fields = array(
+                $Db->name($model->alias) . '.' . $Db->name($checkFieldName),
+                $Db->name($checkFieldName),
+                $model->alias . '.' . $checkFieldName,
+                $checkFieldName
+            );
+
+            foreach($fields as $field) {
+                if (preg_match('/^' . preg_quote($field) . '[\s=!]+/i', $queryData['conditions']) || preg_match('/\\x20+' . preg_quote($field) . '[\s=!]+/i', $queryData['conditions'])) {
+                    $include = false;
+                    break;
+                }
+            }
+        } else if (empty($queryData['conditions'])) {
+            $include = true;
+        }  else if (
+            !in_array($checkFieldName, array_keys($queryData['conditions']), true)
+            && !in_array($model->alias . '.' . $checkFieldName, array_keys($queryData['conditions']), true)
+        ) {
+            $include = true;
+        }
+
+        if ($include) {
+            if (empty($queryData['conditions'])) {
+                $queryData['conditions'] = array();
+            }
+
+            if (is_string($queryData['conditions'])) {
+                $queryData['conditions'] = '(' . $Db->name($model->alias) . '.' . $Db->name($checkFieldName) . ' IS NULL) AND ' . $queryData['conditions'];
+            } else {
+                $queryData['conditions'][] = array(array($model->alias . '.' . $checkFieldName => null));
+            }
+        }
+
+        foreach(array('hasOne', 'hasMany', 'hasAndBelongsToMany') as $binding) {
+            if (empty($model->$binding)) {
+                continue;
+            }
+            foreach ($model->{$binding} as $assoc => $value) {
+                if (empty($model->{$binding}[$assoc]['conditions'])) {
+                    $model->{$binding}[$assoc]['conditions'] = array(array($assoc . '.' . $checkFieldName => null));
+                } else if(is_string($model->{$binding}[$assoc]['conditions'])) {
+                    $model->{$binding}[$assoc]['conditions'] = '(' . $Db->name($assoc) . '.' . $Db->name($checkFieldName) . ' IS NULL) AND ' . $model->{$binding}[$assoc]['conditions'];
+                } else {
+                    $model->{$binding}[$assoc]['conditions'][] = array(array($assoc . '.' . $checkFieldName => null));
+                }
+            }
+        }
+        return $queryData;
     }
 }
