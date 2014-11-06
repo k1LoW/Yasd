@@ -290,10 +290,13 @@ class SoftDeletableBehavior extends ModelBehavior {
         }
 
         foreach(array('hasOne', 'hasMany', 'hasAndBelongsToMany') as $binding) {
-            if (empty($model->$binding)) {
+            if (empty($model->{$binding})) {
                 continue;
             }
             foreach ($model->{$binding} as $assoc => $value) {
+                if (!$model->{$assoc}->hasField($checkFieldName)) {
+                    continue;
+                }
                 if (empty($model->{$binding}[$assoc]['conditions'])) {
                     $model->{$binding}[$assoc]['conditions'] = array('OR' => array(array($assoc . '.' . $checkFieldName => '0'),
                                                                                    array($assoc . '.' . $checkFieldName => null)));
@@ -361,10 +364,13 @@ class SoftDeletableBehavior extends ModelBehavior {
         }
 
         foreach(array('hasOne', 'hasMany', 'hasAndBelongsToMany') as $binding) {
-            if (empty($model->$binding)) {
+            if (empty($model->{$binding})) {
                 continue;
             }
             foreach ($model->{$binding} as $assoc => $value) {
+                if (!$model->{$assoc}->hasField($checkFieldName)) {
+                    continue;
+                }
                 if (empty($model->{$binding}[$assoc]['conditions'])) {
                     $model->{$binding}[$assoc]['conditions'] = array(array($assoc . '.' . $checkFieldName => null));
                 } else if(is_string($model->{$binding}[$assoc]['conditions'])) {
