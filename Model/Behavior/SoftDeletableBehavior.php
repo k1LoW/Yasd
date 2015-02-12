@@ -68,10 +68,8 @@ class SoftDeletableBehavior extends ModelBehavior {
                 continue;
             }
             foreach ($model->{$binding} as $assoc => $value) {
-                if (!$model->{$assoc}->hasField($this->settings[$model->alias]['field'])) {
-                    continue;
-                }
-                if (!$model->{$assoc}->hasField($this->settings[$model->alias]['field_date'])) {
+                if (!$model->{$assoc}->hasField($this->settings[$model->alias]['field'])
+                    && !$model->{$assoc}->hasField($this->settings[$model->alias]['field_date'])) {
                     continue;
                 }
                 $model->{$binding}[$assoc]['conditions'] = $this->bindingConditions[$binding][$assoc];
