@@ -18,6 +18,7 @@ App::uses('YasdException', 'Yasd.Error');
 class SoftDeletableBehavior extends ModelBehavior {
 
     public $settings = array();
+    public $bindingConditions = array();
 
     public function setUp(Model $model, $settings = array()) {
         $defaults = array(
@@ -55,6 +56,28 @@ class SoftDeletableBehavior extends ModelBehavior {
             return false;
         }
         return true;
+    }
+
+    /**
+     * afterFind
+     *
+     */
+    public function afterFind(Model $model, $results, $primary = false) {
+        foreach(array('hasOne', 'hasMany', 'hasAndBelongsToMany') as $binding) {
+            if (empty($model->{$binding})) {
+                continue;
+            }
+            foreach ($model->{$binding} as $assoc => $value) {
+                if (!$model->{$assoc}->hasField($this->settings[$model->alias]['field'])) {
+                    continue;
+                }
+                if (!$model->{$assoc}->hasField($this->settings[$model->alias]['field_date'])) {
+                    continue;
+                }
+                $model->{$binding}[$assoc]['conditions'] = $this->bindingConditions[$binding][$assoc];
+            }
+        }
+        return $results;
     }
 
     public function softDelete(Model $model, $id, $cascade = false) {
@@ -293,10 +316,12 @@ class SoftDeletableBehavior extends ModelBehavior {
             if (empty($model->{$binding})) {
                 continue;
             }
+            $this->bindingConditions[$binding] = array();
             foreach ($model->{$binding} as $assoc => $value) {
                 if (!$model->{$assoc}->hasField($checkFieldName)) {
                     continue;
                 }
+                $this->bindingConditions[$binding][$assoc] = $model->{$binding}[$assoc]['conditions'];
                 if (empty($model->{$binding}[$assoc]['conditions'])) {
                     $model->{$binding}[$assoc]['conditions'] = array('OR' => array(array($assoc . '.' . $checkFieldName => '0'),
                                                                                    array($assoc . '.' . $checkFieldName => null)));
@@ -367,10 +392,12 @@ class SoftDeletableBehavior extends ModelBehavior {
             if (empty($model->{$binding})) {
                 continue;
             }
+            $this->bindingConditions[$binding] = array();
             foreach ($model->{$binding} as $assoc => $value) {
                 if (!$model->{$assoc}->hasField($checkFieldName)) {
                     continue;
                 }
+                $this->bindingConditions[$binding][$assoc] = $model->{$binding}[$assoc]['conditions'];
                 if (empty($model->{$binding}[$assoc]['conditions'])) {
                     $model->{$binding}[$assoc]['conditions'] = array(array($assoc . '.' . $checkFieldName => null));
                 } else if(is_string($model->{$binding}[$assoc]['conditions'])) {
