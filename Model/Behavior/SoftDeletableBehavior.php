@@ -63,6 +63,9 @@ class SoftDeletableBehavior extends ModelBehavior {
      *
      */
     public function afterFind(Model $model, $results, $primary = false) {
+        if (!$this->enabled($model)) {
+            return $results;   
+        }
         foreach(array('hasOne', 'hasMany', 'hasAndBelongsToMany') as $binding) {
             if (empty($model->{$binding})) {
                 continue;
