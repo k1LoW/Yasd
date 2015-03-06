@@ -1,6 +1,6 @@
 {
     "name": "k1low/yasd",
-    "description": "Yer Another SoftDeletable Behavior",
+    "description": "Yet Another SoftDeletable Behavior",
     "type": "cakephp-plugin",
     "keywords": ["cakephp", "soft delete"],
     "homepage": "https://github.com/k1LoW/Yasd",
