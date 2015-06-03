@@ -64,7 +64,7 @@ class SoftDeletableBehavior extends ModelBehavior {
      */
     public function afterFind(Model $model, $results, $primary = false) {
         if (!$this->enabled($model)) {
-            return $results;   
+            return $results;
         }
         foreach(array('hasOne', 'hasMany', 'hasAndBelongsToMany') as $binding) {
             if (empty($model->{$binding})) {
@@ -400,7 +400,9 @@ class SoftDeletableBehavior extends ModelBehavior {
                 if (!$model->{$assoc}->hasField($checkFieldName)) {
                     continue;
                 }
-                $this->bindingConditions[$binding][$assoc] = $model->{$binding}[$assoc]['conditions'];
+                if (!empty($model->{$binding}[$assoc]['conditions'])) {
+                    $this->bindingConditions[$binding][$assoc] = $model->{$binding}[$assoc]['conditions'];
+                }
                 if (empty($model->{$binding}[$assoc]['conditions'])) {
                     $model->{$binding}[$assoc]['conditions'] = array(array($assoc . '.' . $checkFieldName => null));
                 } else if(is_string($model->{$binding}[$assoc]['conditions'])) {
